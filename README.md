@@ -1,14 +1,14 @@
-# Template to create a library in Python
-
-The source code is in the folder "src/pythonlibrary/".
+# MLSpaceOps - Python Library
 
 ## Requirements
 
-- pip install wheel setuptools
+    > root$ apt install python3-pip
+
+    > python3 -m ensurepip
+
+    > pip3 install -r requirements.txt
 
 ## Run tests
-
-Go to the folder "src/pythonlibrary/", and execute:
 
     > python setup.py pytest
 
@@ -20,11 +20,13 @@ our wheel file is stored in the “dist” folder.
 
 ## Install library
 
-    > pip install dist/namepythonlib-0.1.0-py3-none-any.whl
+    > pip install dist/mlspace-{VERSION}-py3-none-any.whl
+
+    For instance, VERSION can be 0.1.0
 
 ## Use 
 
 Once it is installed, we can import it using:
 
-    import namepythonlib
-    from namepythonlib import myfunctions
+    import mlspace
+    from mlspace import myfunctions
