@@ -2,6 +2,8 @@
 
 ## Requirements
 
+Python 3.8 or higher
+
     > root$ apt install python3-pip
 
     > python3 -m ensurepip
