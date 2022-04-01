@@ -1,4 +1,13 @@
+# import libraries
 from math import radians, cos, sin, asin, sqrt
+
+import mlspace.helper.functions
+
+# define class to prepare the dataset
+
+
+
+
 def haversine(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
     """
     Calculate the great circle distance between two points on the 
