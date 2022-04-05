@@ -2,9 +2,9 @@
 
 ## Requirements
 
-Python 3.8 or higher
+Python 3.8 or higher with the "liblzma-dev" package installed.
 
-    > root$ apt install python3-pip
+    > root$ apt install python3-pip 
 
     > python3 -m ensurepip
 

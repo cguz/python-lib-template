@@ -1,11 +1,294 @@
 # import libraries
-from math import radians, cos, sin, asin, sqrt
+import os
+import subprocess
+from zipfile import ZipFile
+import pandas as pd
+from pandas import Timestamp
 
 from mlspace.helper import functions
+from mlspace.helper import configuration
 
 # define class to prepare the dataset
+class PrepareData:
+    """ Download, analyze and prepare the dataset
+    
+    Attributes
+    ----------
+    feature_to_predict : str 
+        target data to predict
+    power_all : panda table
+        contains the train and test of the power consumption
+    power_col : list
+        contains the column name of the power consumption
+    saaf_all : panda table
+        contains the train and test of the saaf
+    saaf_cols : panda table
+        contains the column name of the saaf
+    ltdata_all : panda table
+        contains the train and test of the ltdata
+    ltdata_cols : panda table
+        contains the column name of the ltdata
+    dmop_all : panda table
+        contains the train and test of the dmop
+    dmop_cols : panda table
+        contains the column name of the dmop
+    ftl_all : panda table
+        contains the train and test of the ftl
+    ftl_cols : panda table
+        contains the column name of the ftl
+    """
 
+    def __init__(self, feature_to_predict) -> None: 
+        """
+        Create the class PrepareData
 
+        Parameters
+        ----------
+        feature_to_predict : str
+                        target data to predict
+        """
+        self.feature_to_predict = feature_to_predict
+        self
+
+    def download(self):
+        """
+        Function to download the dataset. All the parameters are in the configuration.py
+        """
+        self.__download_unzip(configuration.url, configuration.file_name + configuration.file_extension, configuration.folder)
+
+        return True
+
+    def __download_unzip(self, url, file_name, folder):
+        """
+        Download and unzip the dataset
+
+        Parameters
+        ----------
+        url : str
+            link to download the dataset
+        file_name : str
+            name of the dataset with its extension
+        folder: str
+            name of the folder to store the dataset
+        """
+        # create the directory, if folder does not exist
+        if os.path.isdir(folder) == False:
+            print('Creating the folder %s...' % folder)
+            os.mkdir(folder)
+
+        path = folder + '/' + file_name
+
+        # download the file contents in binary format if it does not exist
+        if os.path.exists(path) == False:
+            print('Downloading from %s, this may take a while...' % url)
+            subprocess.call(['wget',
+                            '--no-check-certificate',
+                            url + file_name, 
+                            '-P',
+                            folder]) 
+
+            # Create a ZipFile Object and load sample.zip in it
+            with ZipFile(path, 'r') as zipObj:
+                # Extract all the contents of zip file in directory folder
+                zipObj.extractall(folder)
+
+    def load_data(self):
+        """
+        Function to load the dataset. 
+        """
+        self.__load_data_power_all()
+        self.__load_data_saaf_all()
+        self.__load_data_ltdata_all()
+        self.__load_data_dmop_all()
+        self.__load_data_ftl_all()
+
+        self.all_cols = self.saaf_cols + self.ltdata_cols + self.dmop_cols + self.ftl_cols
+    
+    def convert_time(self, df):
+        """
+        Function to convert the utc timestamp to datetime
+        """
+        df['ut_ms'] = pd.to_datetime(df['ut_ms'], unit='ms')
+        return df
+
+    def resample_1H(self, df):
+        """
+        Function to resample the dataframe to hourly mean
+        """
+        df = df.set_index('ut_ms')
+        df = df.resample('1H').mean()
+        return df
+
+    def parse_ts(self, filename, dropna=True):
+        """
+        Function to read a csv file and resample to hourly consumption
+        """
+        df = pd.read_csv(configuration.PATH_TO_DATA + '/' + filename)
+        df = self.convert_time(df)
+        df = self.resample_1H(df)
+        if dropna:
+            df = df.dropna()
+        return df
+
+    def parse_ltdata(self, filename):
+        """
+        Function to read the ltdata files
+        """
+        df = pd.read_csv(configuration.PATH_TO_DATA + '/' + filename)
+        df = self.convert_time(df)
+        df = df.set_index('ut_ms')
+        return df
+
+    def parse_dmop(self, filename):
+        """
+        Function to parse the dmop
+        """
+        df = pd.read_csv(configuration.PATH_TO_DATA + '/' + filename)
+        df = self.convert_time(df)
+
+        subsystems = sorted({s[1:4] for s in df['subsystem'] if s[0] == 'A'})
+        
+        df_expansion = [
+            [when] + [(1 if cmd[1:4]==syst else 0) for syst in subsystems]
+            for (when, cmd) in df.values
+            if cmd[0]=='A']
+        
+        df = pd.DataFrame(df_expansion, columns=['ut_ms'] + subsystems)
+        df = df.set_index('ut_ms')
+        
+        # get one row per hour, containing the boolean values indicating whether each
+        # subsystem was activated in that hour;
+        # hours not represented in the file have all columns with 0.
+        # df = df.resample('1H').max().fillna(0)
+        # cells represent number of times intructions were issued to that subsystem in that hour
+        df = df.resample('1H').sum().fillna(0)
+        
+        return df
+        
+    def parse_ftl(self, filename):
+        """
+        Function to parse columns of the ftl to datetime
+        """
+        df = pd.read_csv(configuration.PATH_TO_DATA + '/' + filename)
+        df['utb_ms'] = pd.to_datetime(df['utb_ms'], unit='ms')
+        df['ute_ms'] = pd.to_datetime(df['ute_ms'], unit='ms')
+        return df
+
+    def parse_ftl_all(self, filenames, hour_indices):
+        """
+        Function to parse all the ftl files
+        """
+        ftl_all = pd.concat([self.parse_ftl(f) for f in filenames])
+        
+        types = sorted(set(ftl_all['type']))
+        ftl_df = pd.DataFrame(index=hour_indices, columns=['flagcomms'] + types).fillna(0)
+        
+        # hour indices of discarded events, because of non-ocurrence in `hour_indices`
+        ix_err = []
+
+        for (t_start, t_end, p_type, comms) in ftl_all.values:
+            floor_beg = Timestamp(t_start).floor('1h')
+            floor_end = Timestamp(t_end).floor('1h')
+            
+            try:
+                ftl_df.loc[floor_beg]['flagcomms'] = ftl_df.loc[floor_end]['flagcomms'] = int(comms)
+                ftl_df.loc[floor_beg][p_type]      = ftl_df.loc[floor_end][p_type]      = 1
+            except KeyError:
+                ix_err.append((floor_beg, floor_end))
+        
+        print('Warning: discarded %d FTL events' % len(ix_err))
+        
+        return ftl_all, ftl_df
+
+    def __load_data_power_all(self):
+        """
+        Private Function to load the power consumption. 
+        """
+        ## Load the power files: they are the columns that need to be predicted (predicted value)
+        pow_train1 = self.parse_ts('/train_set/power--2008-08-22_2010-07-10.csv')
+        pow_train2 = self.parse_ts('/train_set/power--2010-07-10_2012-05-27.csv')
+        pow_train3 = self.parse_ts('/train_set/power--2012-05-27_2014-04-14.csv')
+
+        # Load the test sample submission file as template for prediction
+        pow_test = self.parse_ts('power-prediction-sample-2014-04-14_2016-03-01.csv', False)
+
+        # Concatenate the files
+        self.power_all = pd.concat([pow_train1, pow_train2, pow_train3, pow_test])
+
+        # Extract the column names
+        self.power_cols = list(self.power_all.columns)
+
+    def __load_data_saaf_all(self):
+        """
+        Private Function to load the saaf files. 
+        """
+        # Load the saaf files: train samples
+        saaf_train1 = self.parse_ts('/train_set/context--2008-08-22_2010-07-10--saaf.csv')
+        saaf_train2 = self.parse_ts('/train_set/context--2010-07-10_2012-05-27--saaf.csv')
+        saaf_train3 = self.parse_ts('/train_set/context--2012-05-27_2014-04-14--saaf.csv')
+        
+        # Load the test sample submission file 
+        saaf_test = self.parse_ts('/test_set/context--2014-04-14_2016-03-01--saaf.csv')
+
+        # Concatenate the files
+        self.saaf_all = pd.concat([saaf_train1, saaf_train2, saaf_train3, saaf_test])
+
+        # Extract the columns name
+        self.saaf_cols = list(self.saaf_all.columns)
+
+    def __load_data_ltdata_all(self):
+        """
+        Private Function to load the ltdata files. 
+        """
+        # Load the ltdata files: train samples
+        ltdata_train1 = self.parse_ltdata('/train_set/context--2008-08-22_2010-07-10--ltdata.csv')
+        ltdata_train2 = self.parse_ltdata('/train_set/context--2010-07-10_2012-05-27--ltdata.csv')
+        ltdata_train3 = self.parse_ltdata('/train_set/context--2012-05-27_2014-04-14--ltdata.csv')
+        
+        # Load the test sample submission file 
+        ltdata_test = self.parse_ltdata('/test_set/context--2014-04-14_2016-03-01--ltdata.csv')
+
+        # Concatenate the files
+        self.ltdata_all = pd.concat([ltdata_train1, ltdata_train2, ltdata_train3, ltdata_test])
+
+        # Extract the columns name
+        self.ltdata_cols = list(self.ltdata_all.columns)
+
+    def __load_data_dmop_all(self):
+        """
+        Private Function to load the dmop files. 
+        """
+        # Load the dmop files: train samples
+        dmop_train1 = self.parse_dmop('/train_set/context--2008-08-22_2010-07-10--dmop.csv')
+        dmop_train2 = self.parse_dmop('/train_set/context--2010-07-10_2012-05-27--dmop.csv')
+        dmop_train3 = self.parse_dmop('/train_set/context--2012-05-27_2014-04-14--dmop.csv')
+        
+        # Load the test sample submission file 
+        dmop_test = self.parse_dmop('/test_set/context--2014-04-14_2016-03-01--dmop.csv')
+
+        # Concatenate the files
+        self.dmop_all = pd.concat([dmop_train1, dmop_train2, dmop_train3, dmop_test]).fillna(0)
+
+        # Extract the columns name
+        self.dmop_cols = list(self.dmop_all.columns)
+
+    def __load_data_ftl_all(self):
+        """
+        Private Function to load the ftl files. 
+        """
+        self.df = self.power_all
+
+        # Load the ftl files: train samples
+        ftl_fnames = [
+            '/train_set/context--2008-08-22_2010-07-10--ftl.csv',
+            '/train_set/context--2010-07-10_2012-05-27--ftl.csv',
+            '/train_set/context--2012-05-27_2014-04-14--ftl.csv',
+            '/test_set/context--2014-04-14_2016-03-01--ftl.csv',
+            ]
+        self.ftl_all, self.ftl_df = self.parse_ftl_all(filenames=ftl_fnames, hour_indices=self.df.index)
+        
+        # Extract the columns name
+        self.ftl_cols = list(self.ftl_all.columns)
 
 def rmse():
     return functions.RMSE(2, 3)
