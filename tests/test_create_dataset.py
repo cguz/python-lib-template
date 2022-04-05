@@ -6,3 +6,8 @@ def test_rmse():
 def test_download():
     prepare = create_dataset.PrepareData('test')
     assert prepare.download()
+
+def test_load_data():
+    prepare = create_dataset.PrepareData('test')
+    prepare.load_data()
+    assert prepare.all_cols[0] == 'sa'

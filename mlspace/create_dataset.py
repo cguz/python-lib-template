@@ -4,6 +4,7 @@ import subprocess
 from zipfile import ZipFile
 import pandas as pd
 from pandas import Timestamp
+import logging
 
 from mlspace.helper import functions
 from mlspace.helper import configuration
@@ -47,6 +48,8 @@ class PrepareData:
         feature_to_predict : str
                         target data to predict
         """
+        logging.basicConfig(filename='logs/mlspace.log', encoding='utf-8', level=logging.INFO)
+
         self.feature_to_predict = feature_to_predict
         self
 
@@ -54,6 +57,7 @@ class PrepareData:
         """
         Function to download the dataset. All the parameters are in the configuration.py
         """
+        logging.info("Downloading dataset ...")
         self.__download_unzip(configuration.url, configuration.file_name + configuration.file_extension, configuration.folder)
 
         return True
@@ -73,14 +77,14 @@ class PrepareData:
         """
         # create the directory, if folder does not exist
         if os.path.isdir(folder) == False:
-            print('Creating the folder %s...' % folder)
+            logging.info('Creating the folder %s...' % folder)
             os.mkdir(folder)
 
         path = folder + '/' + file_name
 
         # download the file contents in binary format if it does not exist
         if os.path.exists(path) == False:
-            print('Downloading from %s, this may take a while...' % url)
+            logging.info('Downloading from %s, this may take a while...' % url)
             subprocess.call(['wget',
                             '--no-check-certificate',
                             url + file_name, 
@@ -96,6 +100,9 @@ class PrepareData:
         """
         Function to load the dataset. 
         """
+        
+        logging.info("Loading dataset ...")
+
         self.__load_data_power_all()
         self.__load_data_saaf_all()
         self.__load_data_ltdata_all()
@@ -107,6 +114,11 @@ class PrepareData:
     def convert_time(self, df):
         """
         Function to convert the utc timestamp to datetime
+
+        Parameters
+        ----------
+        df : DataFrame
+            dataset as a data frame
         """
         df['ut_ms'] = pd.to_datetime(df['ut_ms'], unit='ms')
         return df
@@ -114,6 +126,11 @@ class PrepareData:
     def resample_1H(self, df):
         """
         Function to resample the dataframe to hourly mean
+
+        Parameters
+        ----------
+        df : DataFrame
+            dataset as a data frame
         """
         df = df.set_index('ut_ms')
         df = df.resample('1H').mean()
@@ -122,6 +139,13 @@ class PrepareData:
     def parse_ts(self, filename, dropna=True):
         """
         Function to read a csv file and resample to hourly consumption
+
+        Parameters
+        ----------
+        filename : str
+            name of the file
+        dropna : bool
+            if True remove rows with null values
         """
         df = pd.read_csv(configuration.PATH_TO_DATA + '/' + filename)
         df = self.convert_time(df)
@@ -133,6 +157,11 @@ class PrepareData:
     def parse_ltdata(self, filename):
         """
         Function to read the ltdata files
+
+        Parameters
+        ----------
+        filename : str
+            name of the file
         """
         df = pd.read_csv(configuration.PATH_TO_DATA + '/' + filename)
         df = self.convert_time(df)
@@ -142,6 +171,11 @@ class PrepareData:
     def parse_dmop(self, filename):
         """
         Function to parse the dmop
+
+        Parameters
+        ----------
+        filename : str
+            name of the file
         """
         df = pd.read_csv(configuration.PATH_TO_DATA + '/' + filename)
         df = self.convert_time(df)
@@ -167,7 +201,12 @@ class PrepareData:
         
     def parse_ftl(self, filename):
         """
-        Function to parse columns of the ftl to datetime
+        Function to read the FTL files and convert the columns to datetime
+
+        Parameters
+        ----------
+        filename : str
+            name of the file
         """
         df = pd.read_csv(configuration.PATH_TO_DATA + '/' + filename)
         df['utb_ms'] = pd.to_datetime(df['utb_ms'], unit='ms')
@@ -177,6 +216,13 @@ class PrepareData:
     def parse_ftl_all(self, filenames, hour_indices):
         """
         Function to parse all the ftl files
+
+        Parameters
+        ----------
+        filename : str
+            name of the file
+        hour_indices : int
+            indexes of the hours
         """
         ftl_all = pd.concat([self.parse_ftl(f) for f in filenames])
         
@@ -196,7 +242,7 @@ class PrepareData:
             except KeyError:
                 ix_err.append((floor_beg, floor_end))
         
-        print('Warning: discarded %d FTL events' % len(ix_err))
+        logging.warning('Warning: discarded %d FTL events' % len(ix_err))
         
         return ftl_all, ftl_df
 
@@ -289,6 +335,14 @@ class PrepareData:
         
         # Extract the columns name
         self.ftl_cols = list(self.ftl_all.columns)
+
+    def analyze_data(self):    
+        pass
+
+    def check_quality_gate(self):
+
+        pass
+
 
 def rmse():
     return functions.RMSE(2, 3)
