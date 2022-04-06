@@ -6,8 +6,11 @@ import pandas as pd
 from pandas import Timestamp
 import logging
 
-from mlspace.helper import functions
-from mlspace.helper import configuration
+from mlspace.helpers import functions
+from mlspace.helpers import configuration
+
+from mlspace.helpers.quality_gate import QualityCheck
+from mlspace.helpers.quality_gate import QualityGate1
 
 # define class to prepare the dataset
 class PrepareData:
@@ -340,8 +343,33 @@ class PrepareData:
         pass
 
     def check_quality_gate(self):
+        
+        # apply QG1-QC1
+        (power_risks_range, power_unknown) = self.check_range(power_all)
+        (saaf_risks_range, saaf_unknown) = self.check_range(saaf_all)
+        (ltdata_risks_range, ltdata_unknown) = self.check_range(ltdata_all)
+        (dmop_risks_range, dmop_unknown) = self.check_range(dmop_all)
+        (ftl_risks_range, ftl_unknown) = self.check_range(ftl_df)
 
-        pass
+        self.print_risks_range("Power", power_risks_range, power_unknown)
+        self.print_risks_range("Saaf", saaf_risks_range, saaf_unknown)
+        self.print_risks_range("Ltdata", ltdata_risks_range, ltdata_unknown)
+        self.print_risks_range("Dmop", dmop_risks_range, dmop_unknown)
+        self.print_risks_range("Ftl", ftl_risks_range, ftl_unknown)
+
+
+    # define the function to call the quality gate
+    def check_range(self, dataset_column):
+        qg = QualityGate1("QG1-QC1", QualityCheck.QC1, dataset_column)
+        return qg.execute()
+
+    # function to print risks
+    def print_risks_range(self, text, risks, unknown):
+        logging.info(text, ":")
+        if len(risks) != 0:
+            logging.warning(" -> risks range: \n", risks)
+        if len(unknown) != 0:
+            logging.warning(" -> the following feature are not inside the ontology:\n", unknown)
 
 
 def rmse():

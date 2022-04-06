@@ -4,6 +4,19 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import PercentFormatter
 
+import nest_asyncio
+nest_asyncio.apply()
+
+from gremlin_python.structure.graph import Graph
+from gremlin_python.process.graph_traversal import __
+from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
+
+import mlspace.helpers.configuration as configuration
+
+# create remote connection on the graph database using Gremlin
+graph = Graph()
+g = graph.traversal().withRemote(DriverRemoteConnection(configuration.CONFIG_CONNECTION, 'g'))
+
 # Function to plot the data
 def plot_features(X):    
     """

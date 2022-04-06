@@ -4,6 +4,8 @@ import os
 # Download
 url = 'https://zenodo.org/record/6327379/files/'
 
+# Configurate the connection to gremlin
+CONFIG_CONNECTION='ws://localhost:8182/gremlin'
 
 # used in download and the create_dataset and train_model.ipynb
 file_name = 'mars-express-power-3years'

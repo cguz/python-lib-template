@@ -32,3 +32,13 @@ Once it is installed, we can import it using:
 
     import mlspace
     from mlspace import myfunctions
+
+## Document code
+
+- [] quality_gate
+- [] requirement
+- [] fill_gap_techniques
+- [] features
+- [] expected_distribution
+- [] algorithms
+
