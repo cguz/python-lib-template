@@ -1,6 +1,8 @@
 from mlspace.helpers.requirement import Requirement
 from mlspace.helpers.expected_distribution import ExpectedDistribution
 
+from mlspace.helpers.functions import g 
+
 import logging
 
 label_feature = 'Feature'

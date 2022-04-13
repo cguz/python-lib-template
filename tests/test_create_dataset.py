@@ -5,9 +5,12 @@ def test_rmse():
 
 def test_download():
     prepare = create_dataset.PrepareData('test')
+    prepare.skip_test_download = True
     assert prepare.download()
 
-def test_load_data():
+def test_all_steps():
     prepare = create_dataset.PrepareData('test')
     prepare.load_data()
+    prepare.check_quality_gate()
+    prepare.save_to_file()
     assert prepare.all_cols[0] == 'sa'

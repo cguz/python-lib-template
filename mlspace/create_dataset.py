@@ -54,6 +54,8 @@ class PrepareData:
         logging.basicConfig(filename='logs/mlspace.log', encoding='utf-8', level=logging.INFO)
 
         self.feature_to_predict = feature_to_predict
+        self.pass_quality_check = False
+        self.skip_test_download = False
         self
 
     def download(self):
@@ -61,6 +63,10 @@ class PrepareData:
         Function to download the dataset. All the parameters are in the configuration.py
         """
         logging.info("Downloading dataset ...")
+        
+        if not self.skip_test_download: 
+            pass
+        
         self.__download_unzip(configuration.url, configuration.file_name + configuration.file_extension, configuration.folder)
 
         return True
@@ -344,32 +350,115 @@ class PrepareData:
 
     def check_quality_gate(self):
         
-        # apply QG1-QC1
-        (power_risks_range, power_unknown) = self.check_range(power_all)
-        (saaf_risks_range, saaf_unknown) = self.check_range(saaf_all)
-        (ltdata_risks_range, ltdata_unknown) = self.check_range(ltdata_all)
-        (dmop_risks_range, dmop_unknown) = self.check_range(dmop_all)
-        (ftl_risks_range, ftl_unknown) = self.check_range(ftl_df)
+        if not self.pass_quality_check:
 
-        self.print_risks_range("Power", power_risks_range, power_unknown)
-        self.print_risks_range("Saaf", saaf_risks_range, saaf_unknown)
-        self.print_risks_range("Ltdata", ltdata_risks_range, ltdata_unknown)
-        self.print_risks_range("Dmop", dmop_risks_range, dmop_unknown)
-        self.print_risks_range("Ftl", ftl_risks_range, ftl_unknown)
+            # apply QG1-QC1
+            (power_risks_range, power_unknown) = self.__check_range(self.power_all)
+            (saaf_risks_range, saaf_unknown) = self.__check_range(self.saaf_all)
+            (ltdata_risks_range, ltdata_unknown) = self.__check_range(self.ltdata_all)
+            (dmop_risks_range, dmop_unknown) = self.__check_range(self.dmop_all)
+            (ftl_risks_range, ftl_unknown) = self.__check_range(self.ftl_df)
+
+            self.__print_risks_range("Power", power_risks_range, power_unknown)
+            self.__print_risks_range("Saaf", saaf_risks_range, saaf_unknown)
+            self.__print_risks_range("Ltdata", ltdata_risks_range, ltdata_unknown)
+            self.__print_risks_range("Dmop", dmop_risks_range, dmop_unknown)
+            self.__print_risks_range("Ftl", ftl_risks_range, ftl_unknown)
 
 
-    # define the function to call the quality gate
-    def check_range(self, dataset_column):
+            # apply QG1-QC2
+            self.__check_fill_gaps()
+
+
+            # apply QG1-QC3
+            # Name of the expectation suite
+            expectation_suite_name = "mars_express_power_train_x.demo"
+
+            # Name of the checkpoint
+            checkpoint = "mars_express_power_train_x.demo" 
+
+            # Name of the dataset to evaluate
+            dataset_name = "train_x.csv"
+
+            self.__check_great_expectation(dataset_name, checkpoint, expectation_suite_name)
+
+
+            # apply QG1-QC4
+            name_exp_dist = "power_expected_distribution"
+            
+            result = self.__check_expected_distribution(self.power_cols, self.power_all, name_exp_dist)
+
+            logging.info(result["NPWD2401"])
+
+
+            # if every quality check pass succesfully, we join all the explanatory features
+            self.df = self.df.join(self.saaf_all)
+            self.df = self.df.join(self.ltdata_all)
+            self.df = self.df.join(self.dmop_all)
+            self.df = self.df.join(self.ftl_df_sel)
+            self.df.shape
+
+            self.pass_quality_check = True
+
+
+    # define the function to call the quality gate check range
+    def __check_range(self, dataset_column):
         qg = QualityGate1("QG1-QC1", QualityCheck.QC1, dataset_column)
         return qg.execute()
 
     # function to print risks
-    def print_risks_range(self, text, risks, unknown):
+    def __print_risks_range(self, text, risks, unknown):
         logging.info(text, ":")
         if len(risks) != 0:
             logging.warning(" -> risks range: \n", risks)
         if len(unknown) != 0:
             logging.warning(" -> the following feature are not inside the ontology:\n", unknown)
+
+
+    # define the function to fill gaps
+    def __check_fill_gaps(self):
+        
+        # saaf and LTDATA
+        qg = QualityGate1("QG1-QC2", QualityCheck.QC2, "nearest")
+        if qg.execute():
+            # Make sure that saaf has the same sampling as the power, fill gaps with nearest value
+            self.saaf_all = self.saaf_all.reindex(self.df.index, method=qg.arguments)
+            self.ltdata_all = self.ltdata_all.reindex(self.df.index, method=qg.arguments)
+
+        # DMOP files
+        qg = QualityGate1("QG1-QC2", QualityCheck.QC2, "zero")
+        if qg.execute():
+            # Make sure that dmop_all has the same sampling as the power, fill NA with zero value
+            self.dmop_all = self.dmop_all.reindex(self.df.index).fillna(0)
+            # dmop_all = dmop_all.reindex(df.index, fill_value=0)
+
+
+    # define the function to call the great expectation
+    def __check_great_expectation(self, dataset_name, checkpoint, expectation_suite_name):
+        qg = QualityGate1("QG1-QC3", QualityCheck.QC3, dataset_name, checkpoint, expectation_suite_name)
+        return qg.execute()
+
+
+    # define the function to call the expected distribution
+    def __check_expected_distribution(self, power_cols, power_all, name_exp_dist):
+        qg = QualityGate1("QG1-QC4", QualityCheck.QC4, power_cols, power_all, name_exp_dist)
+        return qg.execute()
+
+
+    # define function to save files
+    def save_to_file(self):
+        Y = self.df[self.power_cols]
+        X = self.df.drop(self.power_cols, axis=1)
+
+        # if the directory does not exist, we create it
+        if not os.path.exists(configuration.PATH_TRAIN_TO_PKL):
+            os.mkdir(configuration.PATH_TRAIN_TO_PKL)
+
+        FULL_TRAIN_Y_TO_PKL = os.path.join(configuration.PATH_TRAIN_TO_PKL, configuration.NAME_TRAIN_Y_TO_PKL)
+        FULL_TRAIN_X_TO_PKL = os.path.join(configuration.PATH_TRAIN_TO_PKL, configuration.NAME_TRAIN_X_TO_PKL)
+
+        Y.to_pickle(FULL_TRAIN_Y_TO_PKL)
+        X.to_pickle(FULL_TRAIN_X_TO_PKL)
 
 
 def rmse():
