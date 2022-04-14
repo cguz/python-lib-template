@@ -447,7 +447,10 @@ class PrepareData:
 
     # define function to save files
     def save_to_file(self):
-        Y = self.df[self.power_cols]
+        # TODO select features to predict 
+        Y = self.df[self.power_cols] 
+
+        # TODO select explanatory features from the relationships
         X = self.df.drop(self.power_cols, axis=1)
 
         # if the directory does not exist, we create it
