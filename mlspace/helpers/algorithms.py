@@ -1,5 +1,7 @@
 import logging
 
+from mlspace.helpers.functions import g 
+
 label_type_data = 'TypeData'
 
 # TypeData class

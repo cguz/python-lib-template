@@ -1,3 +1,6 @@
+
+from mlspace.helpers.functions import g 
+
 label_fill_gap = 'FillGaps'
 
 # FillGaps classes

@@ -3,8 +3,11 @@
 # import libraries
 import os
 import pandas as pd
+import numpy as np
 from pandas import Timestamp
 import logging
+
+import joblib
 
 from sklearn.ensemble import RandomForestRegressor
 
@@ -18,8 +21,8 @@ class TrainModel():
     
     Attributes
     ----------
-    feature_to_predict : str 
-        target data to predict
+    path_data : str 
+        full path directory of the data X and Y
     """
 
     def __init__(self, path_data) -> None:
@@ -38,9 +41,13 @@ class TrainModel():
 
     def train(self):
         
-        # create the full path
+        # create the full path of the tain data
         FULL_TRAIN_Y_TO_PKL = os.path.join(self.path_data, configuration.NAME_TRAIN_Y_TO_PKL)
         FULL_TRAIN_X_TO_PKL = os.path.join(self.path_data, configuration.NAME_TRAIN_X_TO_PKL)
+
+        # create the full path to store the data
+        FULL_TEST_Y = os.path.join(self.path_data, configuration.NAME_TEST_Y)
+        FULL_TEST_Y_HAT = os.path.join(self.path_data, configuration.NAME_TEST_Y_HAT)
 
         # read data X and Y
         X = pd.read_pickle(FULL_TRAIN_X_TO_PKL)
@@ -59,7 +66,7 @@ class TrainModel():
         # **************************************************** #
         # **************** TO CROSSVALIDATION **************** #
         # **************************************************** #
-        # (trains on two years; leaves the 3rd for validation)
+        # (trains on two years; leaves the 3rd for validation) #
         cv_split = X_train.index < '2012-05-27'
         X_train_cv, Y_train_cv = X_train[cv_split], Y_train[cv_split]
         X_val_cv, Y_val_cv = X_train[~cv_split], Y_train[~cv_split]
@@ -72,13 +79,26 @@ class TrainModel():
         self.model = RandomForestRegressor(n_estimators=n_estimators, n_jobs=n_jobs, min_samples_leaf=min_samples_leaf)
 
         # train the model
-        %time self.model.fit(X_train_cv, Y_train_cv)
+        self.model.fit(X_train_cv, Y_train_cv)
 
         # evaluate the model
-        %time Y_val_cv_hat = model.predict(X_val_cv)
+        Y_val_cv_hat = self.model.predict(X_val_cv)
         rmse =  functions.RMSE(Y_val_cv, Y_val_cv_hat)
 
         print("Local prediction error: {}\n".format(rmse))
         print("Feature importances:")
-        for feature, importance in sorted(zip(self.rf.feature_importances_, X_train.columns), key=lambda x: x[0], reverse=True):
+        for feature, importance in sorted(zip(self.model.feature_importances_, X_train.columns), key=lambda x: x[0], reverse=True):
             print(feature, importance)
+
+
+        # train and test the model with the complete dataset
+        self.model.fit(X_train, Y_train)
+
+        Y_test_hat = self.model.predict(X_test)
+
+        # store predicted value and real value
+        np.save(FULL_TEST_Y_HAT, Y_test_hat)
+        np.save(FULL_TEST_Y, Y_test)
+
+        # store the model
+        joblib.dump(self.model, configuration.PATH_MODEL)

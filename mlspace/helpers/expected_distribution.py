@@ -1,5 +1,7 @@
 import logging
 
+from mlspace.helpers.functions import g 
+
 label_expe_distribution = "ExpectedDistribution"
 
 class ExpectedDistribution:
@@ -22,7 +24,7 @@ class ExpectedDistribution:
             g.V(self.id).property('Ppf', self.Ppf).next()
             g.V(self.id).property('Cdf', self.Cdf).next()
         else:
-            result = self.g.addV(label_expe_distribution).property(
+            result = g.addV(label_expe_distribution).property(
                 'Name', self.Name).property(
                 'Hist', self.Hist).property(
                 'Bins', self.Bins).property(
@@ -37,25 +39,25 @@ class ExpectedDistribution:
             logging.info("Cdf: ", len(self.Cdf))
 
     def find(self):
-        search = self.g.V().hasLabel(label_expe_distribution).has('Name', self.Name).toList()
+        search = g.V().hasLabel(label_expe_distribution).has('Name', self.Name).toList()
         if len(search) != 0:
             for f in search:
                 self.id = f.id
                 self.fill()
 
     def fill(self):
-        self.Name = self.g.V(self.id).values('Name').next()
+        self.Name = g.V(self.id).values('Name').next()
         if len(self.Hist) == 0:
-            self.Hist = self.g.V(self.id).values('Hist').next()
+            self.Hist = g.V(self.id).values('Hist').next()
         if len(self.Bins) == 0:
-            self.Bins = self.g.V(self.id).values('Bins').next()
+            self.Bins = g.V(self.id).values('Bins').next()
         if len(self.Ppf) == 0:
-            self.Ppf  = self.g.V(self.id).values('Ppf').next()
+            self.Ppf  = g.V(self.id).values('Ppf').next()
         if len(self.Cdf) == 0:
-            self.Cdf  = self.g.V(self.id).values('Cdf').next()
+            self.Cdf  = g.V(self.id).values('Cdf').next()
 
     def exist(self):
         return self.id != 0
 
     def remove(self):
-        self.g.V(self.id).drop().iterate()
+        g.V(self.id).drop().iterate()

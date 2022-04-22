@@ -65,10 +65,10 @@ def gen_histogram(dataset, draw, bins = ''):
     cdf = np.cumsum(ppf)
 
     # printing histogram
-    print()
-    print("H:", hist) 
-    print("ppf:", ppf) 
-    print("bins:", bins) 
+    #print()
+    #print("H:", hist) 
+    #print("ppf:", ppf) 
+    #print("bins:", bins) 
 
     if draw:
         # Creating plot

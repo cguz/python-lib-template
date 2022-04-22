@@ -15,6 +15,10 @@ from mlspace.helpers.features import Features, Feature
 from mlspace.helpers.fill_gap_techniques import FillGaps
 from mlspace.helpers.algorithms import Algorithm, TypeData
 
+from mlspace.helpers.features import edge_label_hasA
+
+from mlspace.helpers import functions
+
 
 class QualityCheck(Enum): 
     """
@@ -263,11 +267,11 @@ class QualityGateCheckExpectedDistribution(QualityGate):
                         exp_cdf  = literal_eval(exp_distribution.Cdf)
 
                     # considering the exp_bins, we calculate the actual ppf or hist
-                    act_hist, _, act_ppf, _ = self.gen_histogram(self.all_cols[name], False, exp_bins)
+                    act_hist, _, act_ppf, _ = functions.gen_histogram(self.all_cols[name], False, exp_bins)
 
                     # get indeces with wrong range
                     # make the difference between the exp_ppf and the actual ppf or exp_hist and the actual hist
-                    index_sub_set = self.get_indices_with_wrong_range(act_ppf, exp_ppf)
+                    index_sub_set = functions.get_indices_with_wrong_range(act_ppf, exp_ppf)
 
                     # store the subset 
                     result_exp_dist[name] = index_sub_set
@@ -278,62 +282,6 @@ class QualityGateCheckExpectedDistribution(QualityGate):
                     #logging.info(index_sub_set)
 
         return result_exp_dist
-
-    # Generate from an array:
-    # - the histogram
-    # - bins: range or placement on the number line
-    # - ppf: percent point function
-    # - cdf: cumulative distribution function. Not yet used.
-    def gen_histogram(self, dataset, draw, bins = ''):
-        
-        if bins == '':
-            hist, bins = np.histogram(dataset)
-        else:
-            hist, bins = np.histogram(dataset, bins)
-
-        ppf = hist / sum(hist)
-
-        cdf = np.cumsum(ppf)
-
-        # printing histogram
-        logging.info()
-        logging.info("H:", hist) 
-        logging.info("ppf:", ppf) 
-        logging.info("bins:", bins) 
-
-        if draw:
-            # Creating plot
-            fig = plt.figure(figsize =(10, 7))
-            
-            plt.hist(dataset, bins) #, weights=[1/len(dataset)] *len(dataset)) 
-
-            # plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
-            
-            plt.title("Numpy Histogram") 
-
-            # plotting PPF and CDF
-            plt.plot(bins[1:], ppf, color="red", label="PPF")
-            # plt.plot(bins[1:], cdf, label="CDF")
-            plt.legend()
-            
-            # show plot
-            plt.show()
-        
-        return hist, bins, ppf, cdf
-
-    # Calculating indices with wrong range against the expected histogram
-    # return:
-    # - index subset
-    # - for each index the remain amount of value (in percentage) to reach the expected histogram
-    def get_indices_with_wrong_range(self, x, y, percentage=False):
-
-        diff = x - y
-        index_subset = np.where(diff < 0)
-
-        if percentage: 
-            return index_subset, diff[index_subset]*-100
-        else:
-            return index_subset, diff[index_subset]
 
 
 # Check Algorithm

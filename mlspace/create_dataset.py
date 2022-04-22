@@ -56,6 +56,7 @@ class PrepareData:
         self.feature_to_predict = feature_to_predict
         self.pass_quality_check = False
         self.skip_test_download = False
+        self.skip_test_loading_data = False
         self
 
     def download(self):
@@ -109,6 +110,9 @@ class PrepareData:
         """
         Function to load the dataset. 
         """
+        
+        if not self.skip_test_loading_data: 
+            pass
         
         logging.info("Loading dataset ...")
 
@@ -346,7 +350,20 @@ class PrepareData:
         self.ftl_cols = list(self.ftl_all.columns)
 
     def analyze_data(self):    
-        pass
+        
+        # ***********
+        #  FTL files
+        # ***********
+                
+        # determine which event types occur more than 500 times
+        min_occ = (self.ftl_df.sum(axis=0) > 500)
+
+        # get their columns names
+        min_occ_cols = min_occ.index[min_occ.values]
+
+        # prune out from `ftl_df` the rarely occurring event types
+        self.ftl_df_sel = self.ftl_df[min_occ_cols]
+
 
     def check_quality_gate(self):
         
@@ -396,7 +413,7 @@ class PrepareData:
             self.df = self.df.join(self.ltdata_all)
             self.df = self.df.join(self.dmop_all)
             self.df = self.df.join(self.ftl_df_sel)
-            self.df.shape
+            # self.df.shape
 
             self.pass_quality_check = True
 
@@ -410,9 +427,9 @@ class PrepareData:
     def __print_risks_range(self, text, risks, unknown):
         logging.info(text, ":")
         if len(risks) != 0:
-            logging.warning(" -> risks range: \n", risks)
+            logging.info(" -> risks range: \n", risks)
         if len(unknown) != 0:
-            logging.warning(" -> the following feature are not inside the ontology:\n", unknown)
+            logging.info(" -> the following feature are not inside the ontology:\n", unknown)
 
 
     # define the function to fill gaps

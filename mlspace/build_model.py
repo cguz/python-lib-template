@@ -1,0 +1,56 @@
+# import library 
+import os
+import pandas as pd
+
+from mlspace.helpers import functions
+from mlspace.helpers import configuration
+
+from mlspace.helpers.quality_gate import QualityCheck
+from mlspace.helpers.quality_gate import QualityGate2
+
+
+# define class to build the model
+class BuildModel():
+    """ Build Model
+    
+    Attributes
+    ----------
+    path_data : str 
+        full path directory of the data X and Y
+    algorithm : str 
+        name of the algorithm to use
+    """
+
+    def __init__(self, path_data, algorithm) -> None:
+        """
+        Create the class BuildModel
+
+        Parameters
+        ----------
+        path_data : str
+            full path directory of the data X and Y
+        algorithm : str 
+            name of the algorithm to use
+        """
+        self.path_data = path_data
+        self.algorithm = algorithm
+        self.check_continue = False
+        self
+
+    def build(self):
+
+        # create the full path
+        FULL_TRAIN_Y_TO_PKL = os.path.join(self.path_data, configuration.NAME_TRAIN_Y_TO_PKL)
+        FULL_TRAIN_X_TO_PKL = os.path.join(self.path_data, configuration.NAME_TRAIN_X_TO_PKL)
+
+        # read data X and Y
+        X = pd.read_pickle(FULL_TRAIN_X_TO_PKL)
+        Y = pd.read_pickle(FULL_TRAIN_Y_TO_PKL)
+
+        qg = QualityGate2("QG2-QC1", QualityCheck.QC1, Y, self.algorithm)
+        no_appropiate = qg.execute()
+        if len(no_appropiate) != 0:
+            print("\nThe selected algorithm is not appropiate to solve the following features: ", no_appropiate)
+        else:
+            print("\nThe selected algorithm is appropiate, we can continue with the step 3, Train Model")
+            self.check_continue = True
