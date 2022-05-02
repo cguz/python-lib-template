@@ -84,10 +84,10 @@ class Algorithm:
                 # create the relation
                 g.V(t.id).as_('t').V(self.id).addE(edge_label_solveIf).to('t').next()
                 
-                logging.info("[Relation Created] ", self.Name, "- (", edge_label_solveIf, ") >", t.Name)
+                logging.info("[Relation Created] ${0} - (${1}) > ${2}".format(self.Name, edge_label_solveIf, t.Name))
 
             else:
-                logging.info("[Relation Exist] ", self.Name, "->", t.Name)
+                logging.info("[Relation Exist] ${0} -> ${1}".format(self.Name, t.Name))
 
     def exist_relation_type_data(self, name):
         return self.exist_relationship(name, edge_label_solveIf)

@@ -51,7 +51,7 @@ class Feature:
             if len(r) != 0:
                 if not self.exist_relationship(r, edge_label_is_related):
 
-                    logging.info("creating relationship: ", self.Name, " (", self.id, ") ", edge_label_is_related, " ", r)
+                    logging.info("creating relationship: ${0} (${1}) ${2} ${3}".format(self.Name, self.id, edge_label_is_related, r))
                     
                     # create the relationship  self.id -> feature.id with the edge_label_is_related
                     g.V().has('Name', r).as_('t').V(self.id).addE(edge_label_is_related).to('t').next()
@@ -118,7 +118,7 @@ class Feature:
                     logging.info(" - search all nodes with the criterium Requirement -(contains)-> Argument : {0} - ({1}) -> {2} ".format(constraint.Name, edge_label_contains, arg))                    
                     result_argument = g.V(constraint.id).outE(edge_label_contains).inV().has("Name", arg).toList()
 
-                    logging.info(result_argument)
+                    logging.info("${0}",result_argument)
                     
                     g.V(result_argument[len(result_argument)-1].id).property('Value', constraint.ArgumentsValue[index]).next()
 
@@ -135,10 +135,10 @@ class Feature:
             # create the relationship Feature - hasA > ExpectedDistribution
             g.V(expe_dist.id).as_('t').V(self.id).addE(edge_label_hasA).to('t').next()
 
-            logging.info("[Relationship Created] ", self.Name, "- (", edge_label_hasA, ") >", expe_dist.Name)
+            logging.info("[Relationship Created] ${0} - (${1}) > ${2}".format(self.Name, edge_label_hasA, expe_dist.Name))
 
         else:
-            logging.info("[Relationship Exist] ", self.Name, "->", expe_dist.Name)
+            logging.info("[Relationship Exist] ${0} -> ${1}".format(self.Name, expe_dist.Name))
 
     def exist_relationship(self, name, edge_label):
         

@@ -8,7 +8,11 @@ Python 3.8 or higher with the "liblzma-dev" package installed.
 
     > python3 -m ensurepip
 
-    > pip3 install -r requirements.txt
+    > pip3.8 install -r requirements.txt
+
+Running the Gremlin database. Internally we execute:
+
+    kubectl port-forward deployment/dims-deployment 8080:8080 8182:8182 -n offops
 
 ## Run tests
 
@@ -25,6 +29,10 @@ our wheel file is stored in the “dist” folder.
     > pip install dist/mlspace-{VERSION}-py3-none-any.whl
 
     For instance, VERSION can be 0.1.0
+
+    If it does not work, we can install it directly from the current directory:
+
+    > pip install .
 
 ## Use 
 

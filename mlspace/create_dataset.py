@@ -51,7 +51,7 @@ class PrepareData:
         feature_to_predict : str
                         target data to predict
         """
-        logging.basicConfig(filename='logs/mlspace.log', encoding='utf-8', level=logging.INFO)
+        logging.basicConfig(handlers=[logging.FileHandler(filename='logs/mlspace.log', encoding='utf-8', mode='a+')], level=logging.INFO)
 
         self.feature_to_predict = feature_to_predict
         self.pass_quality_check = False
@@ -64,9 +64,6 @@ class PrepareData:
         Function to download the dataset. All the parameters are in the configuration.py
         """
         logging.info("Downloading dataset ...")
-        
-        if not self.skip_test_download: 
-            pass
         
         self.__download_unzip(configuration.url, configuration.file_name + configuration.file_extension, configuration.folder)
 
@@ -89,6 +86,11 @@ class PrepareData:
         if os.path.isdir(folder) == False:
             logging.info('Creating the folder %s...' % folder)
             os.mkdir(folder)
+
+        configuration.PATH_TO_DATA = os.path.join(configuration.folder+ "/", configuration.file_name + "/")
+
+        if not self.skip_test_download: 
+            pass
 
         path = folder + '/' + file_name
 
@@ -405,7 +407,7 @@ class PrepareData:
             
             result = self.__check_expected_distribution(self.power_cols, self.power_all, name_exp_dist)
 
-            logging.info(result["NPWD2401"])
+            logging.info("${0}".format(result[self.feature_to_predict]))
 
 
             # if every quality check pass succesfully, we join all the explanatory features
@@ -425,11 +427,11 @@ class PrepareData:
 
     # function to print risks
     def __print_risks_range(self, text, risks, unknown):
-        logging.info(text, ":")
+        logging.info("${0}:".format(text))
         if len(risks) != 0:
-            logging.info(" -> risks range: \n", risks)
+            logging.info(" -> risks range: \n ${0}".format(risks))
         if len(unknown) != 0:
-            logging.info(" -> the following feature are not inside the ontology:\n", unknown)
+            logging.info(" -> the following feature are not inside the ontology:\n ${0}".format(unknown))
 
 
     # define the function to fill gaps
@@ -477,6 +479,9 @@ class PrepareData:
         FULL_TRAIN_Y_TO_PKL = os.path.join(configuration.PATH_TRAIN_TO_PKL, configuration.NAME_TRAIN_Y_TO_PKL)
         FULL_TRAIN_X_TO_PKL = os.path.join(configuration.PATH_TRAIN_TO_PKL, configuration.NAME_TRAIN_X_TO_PKL)
 
+        logging.info(" -> store Y to file:\n ${0}".format(FULL_TRAIN_Y_TO_PKL))
+        logging.info(" -> store X to file:\n ${0}".format(FULL_TRAIN_X_TO_PKL))
+        
         Y.to_pickle(FULL_TRAIN_Y_TO_PKL)
         X.to_pickle(FULL_TRAIN_X_TO_PKL)
 

@@ -124,7 +124,7 @@ class QualityGateGreatExpectation(QualityGate):
         # check if the checkpoint is inside the list of checkpoints
         if self.checkpoint in self.context.list_checkpoints():
 
-            logging.info(self.checkpoint, " ", self.context.list_checkpoints())
+            logging.info("${0} ${1}".format(self.checkpoint, self.context.list_checkpoints()))
 
             # execute the QG3
             self.context.run_checkpoint(checkpoint_name=self.checkpoint)
@@ -140,7 +140,7 @@ class QualityGateGreatExpectation(QualityGate):
         #create the yaml configuration file
         yaml_config = self.create_configuration(checkpoint_name, expectation_suite_name, datasource_name, dataset_name)
 
-        logging.info("Generated checkpoint: \n", yaml_config)
+        logging.info("Generated checkpoint: \n ${0}".format(yaml_config))
 
         # test checkpoint configuration
         # my_checkpoint = context.test_yaml_config(yaml_config=yaml_config)
@@ -276,7 +276,7 @@ class QualityGateCheckExpectedDistribution(QualityGate):
                     # store the subset 
                     result_exp_dist[name] = index_sub_set
 
-                    logging.info("Calculating ", exp_distribution.Name, " for ", feature.Name)
+                    logging.info("Calculating ${0} for ${1} ".format(exp_distribution.Name, feature.Name))
                     #logging.info("exp ppf: ", exp_ppf[0])
                     #logging.info("actual ppf:", act_ppf[0])
                     #logging.info(index_sub_set)

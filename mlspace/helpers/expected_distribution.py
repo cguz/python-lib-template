@@ -31,12 +31,12 @@ class ExpectedDistribution:
                 'Ppf', self.Ppf).property(
                 'Cdf', self.Cdf).next()
             self.id = result.id
-            logging.info(self.id)
-            logging.info(self.Name)
-            logging.info("Hist: ", len(self.Hist))
-            logging.info("Bins: ", len(self.Bins))
-            logging.info("Ppf: ", len(self.Ppf))
-            logging.info("Cdf: ", len(self.Cdf))
+            logging.info("${0}".format(self.id))
+            logging.info("${0}".format(self.Name))
+            logging.info("Hist: ${0}".format(len(self.Hist)))
+            logging.info("Bins: ${0}".format(len(self.Bins)))
+            logging.info("Ppf: ${0}".format(len(self.Ppf)))
+            logging.info("Cdf: ${0}".format(len(self.Cdf)))
 
     def find(self):
         search = g.V().hasLabel(label_expe_distribution).has('Name', self.Name).toList()
