@@ -34,13 +34,13 @@ class TrainModel():
         path_data : str
             full path directory of the data X and Y
         """
-        logging.basicConfig(filename='logs/mlspace.log', encoding='utf-8', level=logging.INFO)
+        logging.basicConfig(handlers=[logging.FileHandler(filename='logs/mlspace.log', encoding='utf-8', mode='a+')], level=logging.INFO)
 
         self.path_data = path_data
         self
 
     def train(self):
-        
+
         # create the full path of the tain data
         FULL_TRAIN_Y_TO_PKL = os.path.join(self.path_data, configuration.NAME_TRAIN_Y_TO_PKL)
         FULL_TRAIN_X_TO_PKL = os.path.join(self.path_data, configuration.NAME_TRAIN_X_TO_PKL)
@@ -70,6 +70,8 @@ class TrainModel():
         cv_split = X_train.index < '2012-05-27'
         X_train_cv, Y_train_cv = X_train[cv_split], Y_train[cv_split]
         X_val_cv, Y_val_cv = X_train[~cv_split], Y_train[~cv_split]
+
+        logging.info("{0} {1}".format(X_train.shape, Y_train.shape))
 
         n_estimators = 100
         n_jobs = -1

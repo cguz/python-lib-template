@@ -1,6 +1,7 @@
 # import library 
 import os
 import pandas as pd
+import logging
 
 from mlspace.helpers import functions
 from mlspace.helpers import configuration
@@ -32,6 +33,8 @@ class BuildModel():
         algorithm : str 
             name of the algorithm to use
         """
+        logging.basicConfig(handlers=[logging.FileHandler(filename='logs/mlspace.log', encoding='utf-8', mode='a+')], level=logging.INFO)
+
         self.path_data = path_data
         self.algorithm = algorithm
         self.check_continue = False
@@ -50,7 +53,9 @@ class BuildModel():
         qg = QualityGate2("QG2-QC1", QualityCheck.QC1, Y, self.algorithm)
         no_appropiate = qg.execute()
         if len(no_appropiate) != 0:
+            logging.info("\nThe selected algorithm is not appropiate to solve the following features: ${0}".format(no_appropiate))
             print("\nThe selected algorithm is not appropiate to solve the following features: ", no_appropiate)
         else:
+            logging.info("\nThe selected algorithm is appropiate, we can continue with the step 3, Train Model")
             print("\nThe selected algorithm is appropiate, we can continue with the step 3, Train Model")
             self.check_continue = True

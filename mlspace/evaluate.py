@@ -29,6 +29,8 @@ class EvaluateModel():
         path_data : str
             full path directory of the data X and Y
         """
+        logging.basicConfig(handlers=[logging.FileHandler(filename='logs/mlspace.log', encoding='utf-8', mode='a+')], level=logging.INFO)
+
         self.path_data = path_data
         self.check_finish = False
         self
@@ -45,7 +47,7 @@ class EvaluateModel():
 
         # load the metric rmse
         self.metric_rmse = functions.RMSE(Y_test, Y_test_hat)
-        logging.info("Local prediction error: {}\n".format(self.metric_rmse))
+        logging.info("Local prediction error: ${0}\n".format(self.metric_rmse))
 
         df = pd.DataFrame(Y_test_hat[0])
         df.rename(columns={0: 'NPWD2372'}, inplace=True)

@@ -1,4 +1,6 @@
 # import library 
+import logging
+
 from mlspace.helpers.quality_gate import QualityCheck
 from mlspace.helpers.quality_gate import QualityGate1
 
@@ -19,6 +21,8 @@ class DeploymentModel():
         pass_quality_check : bool 
             inform if the deployment pass the quality check
         """
+        logging.basicConfig(handlers=[logging.FileHandler(filename='logs/mlspace.log', encoding='utf-8', mode='a+')], level=logging.INFO)
+
         self.pass_quality_check = False
         
         # Name of the expectation suite
@@ -40,9 +44,11 @@ class DeploymentModel():
             (output_no_deployment) = self.__check_great_expectation(self.dataset_name, self.checkpoint, self.expectation_suite_name)
 
             if len(output_no_deployment) != 0:
+                logging.info("The selected model is appropiate to deployment")
                 print("The selected model is appropiate to deployment")
                 self.pass_quality_check = True
             else:
+                logging.info("The selected model is not appropiate to deployment")
                 print("The selected model is not appropiate to deployment")
 
     

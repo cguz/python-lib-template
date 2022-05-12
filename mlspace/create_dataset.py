@@ -65,11 +65,21 @@ class PrepareData:
         """
         logging.info("Downloading dataset ...")
         
-        self.__download_unzip(configuration.url, configuration.file_name + configuration.file_extension, configuration.folder)
+        self.__download_unzip(configuration.url, configuration.file_name + configuration.file_extension, configuration.folder, False)
 
         return True
 
-    def __download_unzip(self, url, file_name, folder):
+    def download_unzip(self):
+        """
+        Function to unzip the downloaded dataset. All the parameters are in the configuration.py
+        """
+        logging.info("Unzip downloaded dataset ...")
+        
+        self.__download_unzip(configuration.url, configuration.file_name + configuration.file_extension, configuration.folder, True)
+
+        return True
+
+    def __download_unzip(self, url, file_name, folder, only_unzip):
         """
         Download and unzip the dataset
 
@@ -92,7 +102,7 @@ class PrepareData:
         if not self.skip_test_download: 
             pass
 
-        path = folder + '/' + file_name
+        path = configuration.PATH_TO_DATA
 
         # download the file contents in binary format if it does not exist
         if os.path.exists(path) == False:
@@ -102,7 +112,9 @@ class PrepareData:
                             url + file_name, 
                             '-P',
                             folder]) 
-
+            only_unzip = True
+            
+        if only_unzip:
             # Create a ZipFile Object and load sample.zip in it
             with ZipFile(path, 'r') as zipObj:
                 # Extract all the contents of zip file in directory folder
@@ -122,8 +134,13 @@ class PrepareData:
         self.__load_data_saaf_all()
         self.__load_data_ltdata_all()
         self.__load_data_dmop_all()
+        
+        # Create df to join everything together
+        self.df = self.power_all
+
         self.__load_data_ftl_all()
 
+        # join all cols names
         self.all_cols = self.saaf_cols + self.ltdata_cols + self.dmop_cols + self.ftl_cols
     
     def convert_time(self, df):
@@ -337,7 +354,6 @@ class PrepareData:
         """
         Private Function to load the ftl files. 
         """
-        self.df = self.power_all
 
         # Load the ftl files: train samples
         ftl_fnames = [
@@ -409,14 +425,6 @@ class PrepareData:
 
             logging.info("${0}".format(result[self.feature_to_predict]))
 
-
-            # if every quality check pass succesfully, we join all the explanatory features
-            self.df = self.df.join(self.saaf_all)
-            self.df = self.df.join(self.ltdata_all)
-            self.df = self.df.join(self.dmop_all)
-            self.df = self.df.join(self.ftl_df_sel)
-            # self.df.shape
-
             self.pass_quality_check = True
 
 
@@ -465,12 +473,27 @@ class PrepareData:
 
 
     # define function to save files
-    def save_to_file(self):
+    def save(self):
+
+        # we join all the explanatory features
+        self.df = self.df.join(self.saaf_all)
+        self.df = self.df.join(self.ltdata_all)
+        self.df = self.df.join(self.dmop_all)
+        self.df = self.df.join(self.ftl_df_sel)
+        # self.df.shape
+
+        self.__save_to_file()
+
+        self.__store_csv_file()
+        
+    # define function to save files
+    def __save_to_file(self):
+
         # TODO select features to predict 
-        Y = self.df[self.power_cols] 
+        self.Y = self.df[self.power_cols] 
 
         # TODO select explanatory features from the relationships
-        X = self.df.drop(self.power_cols, axis=1)
+        self.X = self.df.drop(self.power_cols, axis=1)
 
         # if the directory does not exist, we create it
         if not os.path.exists(configuration.PATH_TRAIN_TO_PKL):
@@ -482,9 +505,17 @@ class PrepareData:
         logging.info(" -> store Y to file:\n ${0}".format(FULL_TRAIN_Y_TO_PKL))
         logging.info(" -> store X to file:\n ${0}".format(FULL_TRAIN_X_TO_PKL))
         
-        Y.to_pickle(FULL_TRAIN_Y_TO_PKL)
-        X.to_pickle(FULL_TRAIN_X_TO_PKL)
+        self.Y.to_pickle(FULL_TRAIN_Y_TO_PKL)
+        self.X.to_pickle(FULL_TRAIN_X_TO_PKL)
 
+    def __store_csv_file(self):
+
+        # if the directory does not exist, we create it
+        if not os.path.exists(configuration.PATH_TO_DATA_GE):
+            os.mkdir(configuration.PATH_TO_DATA_GE)
+
+        self.Y.to_csv(configuration.FULL_TRAIN_Y_TO_CSV)
+        self.X.to_csv(configuration.FULL_TRAIN_X_TO_CSV)
 
 def rmse():
     return functions.RMSE(2, 3)
