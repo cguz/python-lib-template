@@ -22,7 +22,7 @@ class BuildModel():
         name of the algorithm to use
     """
 
-    def __init__(self, path_data, algorithm) -> None:
+    def __init__(self, path_data, algorithm):
         """
         Create the class BuildModel
 
@@ -38,9 +38,15 @@ class BuildModel():
         self.path_data = path_data
         self.algorithm = algorithm
         self.check_continue = False
-        self
 
     def build(self):
+        """
+        Method to analize if the algorithm to use is appropiated or not
+
+        Return 
+        ----------
+        assign true to the variable self.check_continue if the algorithm is appropiated
+        """
 
         # create the full path
         FULL_TRAIN_Y_TO_PKL = os.path.join(self.path_data, configuration.NAME_TRAIN_Y_TO_PKL)
@@ -53,9 +59,9 @@ class BuildModel():
         qg = QualityGate2("QG2-QC1", QualityCheck.QC1, Y, self.algorithm)
         no_appropiate = qg.execute()
         if len(no_appropiate) != 0:
-            logging.info("\nThe selected algorithm is not appropiate to solve the following features: ${0}".format(no_appropiate))
-            print("\nThe selected algorithm is not appropiate to solve the following features: ", no_appropiate)
+            logging.info("\n\nThe selected algorithm is not appropiate to solve the following features: ${0}".format(no_appropiate))
+            print("\n\nThe selected algorithm is not appropiate to solve the following features: ", no_appropiate)
         else:
-            logging.info("\nThe selected algorithm is appropiate, we can continue with the step 3, Train Model")
-            print("\nThe selected algorithm is appropiate, we can continue with the step 3, Train Model")
+            logging.info("\n\nThe selected algorithm is appropiate, we can continue with the step 3, Train Model")
+            print("\n\nThe selected algorithm is appropiate, we can continue with the step 3, Train Model")
             self.check_continue = True

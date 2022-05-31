@@ -6,7 +6,20 @@ label_arguments = "Arguments"
 edge_label_contains = "contains"
 
 class Requirement:
+    """
+    Class that represents the requirements on the Ontology
 
+    Arguments
+    ----------
+    id : str 
+        identificator of the requirement 
+    name : str 
+        name of the requirement 
+    quality_check : Enum 
+        enumerate that identify the QualityCheck
+    arguments : DataFrame 
+        set of arguments required for the QGs
+    """
     def __init__(self, Name, ArgsName = [], ArgsValue = []):
         self.id = 0
         self.Name = Name

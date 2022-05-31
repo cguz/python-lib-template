@@ -13,13 +13,17 @@ class DeploymentModel():
     ----------
     pass_quality_check : bool 
         inform if the deployment pass the quality check
+    expectation_suite_name : str 
+        name of the suite name of the great expectation
+    checkpoint : str 
+        name of the checkpoint of the great expectation
+    dataset_name : str 
+        name of the dataset of the great expectation
     """
 
-    def __init__(self) -> None:
+    def __init__(self):
         """
         Create the class DeploymentModel
-        pass_quality_check : bool 
-            inform if the deployment pass the quality check
         """
         logging.basicConfig(handlers=[logging.FileHandler(filename='logs/mlspace.log', encoding='utf-8', mode='a+')], level=logging.INFO)
 
@@ -34,9 +38,10 @@ class DeploymentModel():
         # Name of the dataset to evaluate
         self.dataset_name = "estimated_y.csv"
 
-        self
-
     def check_quality_gate(self):
+        """
+        Execute the QG
+        """
         
         if not self.pass_quality_check:
 
@@ -44,15 +49,31 @@ class DeploymentModel():
             (output_no_deployment) = self.__check_great_expectation(self.dataset_name, self.checkpoint, self.expectation_suite_name)
 
             if len(output_no_deployment) != 0:
-                logging.info("The selected model is appropiate to deployment")
-                print("The selected model is appropiate to deployment")
+                logging.info("\n\nThe selected model is appropiate to deployment")
+                print("\n\nThe selected model is appropiate to deployment")
                 self.pass_quality_check = True
             else:
-                logging.info("The selected model is not appropiate to deployment")
-                print("The selected model is not appropiate to deployment")
+                logging.info("\n\nThe selected model is not appropiate to deployment")
+                print("\n\nThe selected model is not appropiate to deployment")
 
     
     # define the function to call the great expectation
     def __check_great_expectation(self, dataset_name, checkpoint, expectation_suite_name):
+        """
+        Private function to execute the great expectation
+    
+        Attributes
+        ----------
+        dataset_name : str 
+            name of the dataset of the great expectation
+        checkpoint : str 
+            name of the checkpoint of the great expectation
+        expectation_suite_name : str 
+            name of the suite name of the great expectation
+
+        Return
+        ----------
+        if the model is not appropiated for deployment
+        """
         qg = QualityGate1("QG3-QC1", QualityCheck.QC3, dataset_name, checkpoint, expectation_suite_name)
         return qg.execute()

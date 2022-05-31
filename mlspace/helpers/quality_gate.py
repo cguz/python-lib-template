@@ -44,26 +44,53 @@ class QualityGate(ABC):
 # Quality Gate 1
 class QualityGate1(QualityGate):
     """
-    create the QualityGate interface
+    Class that represents the QualityGate1
 
     Arguments
     ----------
     name : str 
         name of the quality gate 
+    quality_check : Enum 
+        enumerate that identify the QualityCheck
+    arguments : DataFrame 
+        set of arguments required for the QGs
+    checkpoint : str 
+        name of the checkpoint of the great expectation
+    expectation_suite_name : str 
+        name of the suite name of the great expectation
     """
-    def __init__(self, name, quality_check, data_columns, checkpoint='', expectation_suite_name=''):
+    def __init__(self, name, quality_check, arguments, checkpoint='', expectation_suite_name=''):
+        """
+        initialize the QG1
+
+        Arguments
+        ----------
+        name : str 
+            name of the quality gate 
+        quality_check : Enum 
+            enumerate that identify the QualityCheck
+        arguments : DataFrame 
+            set of arguments required for the QGs
+        checkpoint : str 
+            name of the checkpoint of the great expectation
+        expectation_suite_name : str 
+            name of the suite name of the great expectation
+        """
         if not isinstance(self, QualityGate): raise Exception('Bad interface')
         if not self.version() == '1.0': raise Exception('Bad revision')
 
         self.name = name
         self.quality_check = quality_check
-        self.arguments = data_columns
+        self.arguments = arguments
 
         # for the QC3
         self.checkpoint = checkpoint
         self.expectation_suite_name = expectation_suite_name
 
     def execute(self):
+        """
+        function that execute the QG
+        """
         if self.quality_check == QualityCheck.QC1:
             qg = QualityGateCheckRange(self.name, self.quality_check, self.arguments)
             
@@ -78,10 +105,36 @@ class QualityGate1(QualityGate):
             
         return qg.execute()
 
-
-# Quality Gate 2
 class QualityGate2(QualityGate):
+    """
+    Class that represents the QualityGate2
+
+    Arguments
+    ----------
+    name : str 
+        name of the quality gate 
+    quality_check : Enum 
+        enumerate that identify the QualityCheck
+    arguments : DataFrame 
+        set of arguments required for the QGs
+    algorithm : str 
+        name of the algorithm
+    """
     def __init__(self, name, quality_check, arguments, algorithm):
+        """
+        Function to initialize the QG2
+
+        Arguments
+        ----------
+        name : str 
+            name of the quality gate 
+        quality_check : Enum 
+            enumerate that identify the QualityCheck
+        arguments : DataFrame 
+            set of arguments required for the QGs
+        algorithm : str 
+            name of the algorithm
+        """
         if not isinstance(self, QualityGate): raise Exception('Bad interface')
         if not self.version() == '1.0': raise Exception('Bad revision')
 
@@ -91,15 +144,48 @@ class QualityGate2(QualityGate):
         self.algorithm = algorithm
 
     def execute(self):
+        """
+        Function to execute the QGs
+        """
         if self.quality_check == QualityCheck.QC1:
             qg = QualityGateAlgorithm(self.name, self.quality_check, self.arguments, self.algorithm)
             
         return qg.execute()
 
-
-# Great Expectation Quality Gate
 class QualityGateGreatExpectation(QualityGate):
+    """
+    Class that represents the Great Expectation Quality Gate
+
+    Arguments
+    ----------
+    name : str 
+        name of the quality gate 
+    quality_check : Enum 
+        enumerate that identify the QualityCheck
+    arguments : DataFrame 
+        set of arguments required for the QGs
+    checkpoint : str 
+        name of the checkpoint of the great expectation
+    expectation_suite_name : str 
+        name of the suite name of the great expectation
+    """
     def __init__(self, name, quality_check, dataset_name, checkpoint, expectation_suite_name):
+        """
+        Function to initialize the QG
+
+        Arguments
+        ----------
+        name : str 
+            name of the quality gate 
+        quality_check : Enum 
+            enumerate that identify the QualityCheck
+        arguments : DataFrame 
+            set of arguments required for the QGs
+        checkpoint : str 
+            name of the checkpoint of the great expectation
+        expectation_suite_name : str 
+            name of the suite name of the great expectation
+        """
         if not isinstance(self, QualityGate): raise Exception('Bad interface')
         if not self.version() == '1.0': raise Exception('Bad revision')
 
@@ -113,6 +199,9 @@ class QualityGateGreatExpectation(QualityGate):
         self.context = ge.get_context()
 
     def execute(self):
+        """
+        Function to execute the QG
+        """
         # Name of the datasource
         datasource_name = "mars_express_power"
 
@@ -134,9 +223,21 @@ class QualityGateGreatExpectation(QualityGate):
         
         return []
         
-    # create through the IMLO14-QG3
     def create_checkpoint(self, checkpoint_name, expectation_suite_name, datasource_name, dataset_name):
+        """
+        Function to create the checkpoint . Create through the IMLO14-QG3
 
+        Arguments
+        ----------
+        checkpoint : str 
+            name of the checkpoint of the great expectation
+        expectation_suite_name : str 
+            name of the suite name of the great expectation
+        datasource_name : str 
+            name of the datasource of the great expectation
+        dataset_name : str 
+            name of the dataset of the great expectation
+        """
         #create the yaml configuration file
         yaml_config = self.create_configuration(checkpoint_name, expectation_suite_name, datasource_name, dataset_name)
 
@@ -151,6 +252,24 @@ class QualityGateGreatExpectation(QualityGate):
 
     # create configuration yaml file
     def create_configuration(self, checkpoint_name, expectation_suite_name, datasource_name, dataset_name):
+        """
+        Function to generate the YAML configuration content
+
+        Arguments
+        ----------
+        checkpoint : str 
+            name of the checkpoint of the great expectation
+        expectation_suite_name : str 
+            name of the suite name of the great expectation
+        datasource_name : str 
+            name of the datasource of the great expectation
+        dataset_name : str 
+            name of the dataset of the great expectation
+
+        Return
+        ----------
+        yaml configuration content
+        """
         yaml_config = f"""
         name: {checkpoint_name}
         config_version: 1.0
@@ -167,22 +286,54 @@ class QualityGateGreatExpectation(QualityGate):
         """
         return yaml_config
 
-# Check Range Quality Gate
 class QualityGateCheckRange(QualityGate):
-    def __init__(self, name, quality_check, data_columns):
+    """
+    Function to initialize the QualityGateCheckRange
+
+    Arguments
+    ----------
+    name : str 
+        name of the quality gate 
+    quality_check : Enum 
+        enumerate that identify the QualityCheck
+    arguments : DataFrame 
+        set of arguments required for the QGs
+    """
+    def __init__(self, name, quality_check, arguments):
+        """
+        Function to initialize the QualityGateCheckRange
+
+        Arguments
+        ----------
+        name : str 
+            name of the quality gate 
+        quality_check : Enum 
+            enumerate that identify the QualityCheck
+        arguments : DataFrame 
+            set of arguments required for the QGs
+        """
         if not isinstance(self, QualityGate): raise Exception('Bad interface')
         if not self.version() == '1.0': raise Exception('Bad revision')
 
         self.name = name
         self.quality_check = quality_check
-        self.data_columns = data_columns
+        self.arguments = arguments
 
-    # function to execute 
     def execute(self):
-        return self.check_range(self.data_columns)
+        """
+        Function to execute the QG
+        """
+        return self.check_range(self.arguments)
 
-    # function to check the range values
     def check_range(self, features):
+        """
+        Function to check the range values
+
+        Arguments
+        ----------
+        features : DataFrame 
+            set of features to check the range considering the Ontology
+        """
 
         list_warnings_risks_range = []
         list_warnings_unknown = []
@@ -206,9 +357,32 @@ class QualityGateCheckRange(QualityGate):
 
         return list_warnings_risks_range, list_warnings_unknown
 
-# Check Range Quality Gate
 class QualityGateFillGates(QualityGate):
+    """
+    Function to initialize the QualityGateFillGates
+
+    Arguments
+    ----------
+    name : str 
+        name of the quality gate 
+    quality_check : Enum 
+        enumerate that identify the QualityCheck
+    gap_name : str 
+        name of the gap 
+    """
     def __init__(self, name, quality_check, gap_name):
+        """
+        Function to initialize the QualityGateFillGates
+
+        Arguments
+        ----------
+        name : str 
+            name of the quality gate 
+        quality_check : Enum 
+            enumerate that identify the QualityCheck
+        gap_name : str 
+            name of the gap 
+        """
         if not isinstance(self, QualityGate): raise Exception('Bad interface')
         if not self.version() == '1.0': raise Exception('Bad revision')
 
@@ -217,6 +391,9 @@ class QualityGateFillGates(QualityGate):
         self.gap_name = gap_name
 
     def execute(self):
+        """
+        Function to execute the QG
+        """        
         gap = FillGaps(self.gap_name)
         gap.find()
 
@@ -225,6 +402,22 @@ class QualityGateFillGates(QualityGate):
 
 # Check Expected Distribution Quality Gate
 class QualityGateCheckExpectedDistribution(QualityGate):
+    """
+    Function to Check Expected Distribution Quality Gate
+
+    Arguments
+    ----------
+    name : str 
+        name of the quality gate 
+    quality_check : Enum 
+        enumerate that identify the QualityCheck
+    name_cols : str 
+        name of the features
+    all_cols : DataFrame 
+        set of features
+    name_exp_dist : str 
+        name of the expected distribution 
+    """
     def __init__(self, name, quality_check, name_cols, all_cols, name_exp_dist):
         if not isinstance(self, QualityGate): raise Exception('Bad interface')
         if not self.version() == '1.0': raise Exception('Bad revision')
@@ -236,7 +429,9 @@ class QualityGateCheckExpectedDistribution(QualityGate):
         self.name_exp_dist = name_exp_dist
 
     def execute(self):
-
+        """
+        Function to execute the QG
+        """
         exp_distribution = None
         exp_hist = []
         exp_bins = []
@@ -283,10 +478,36 @@ class QualityGateCheckExpectedDistribution(QualityGate):
 
         return result_exp_dist
 
-
-# Check Algorithm
 class QualityGateAlgorithm(QualityGate):
+    """
+    Class that represents the QualityGateAlgorithm. Check if the algorithm is appropiated, depending on the type of features.
+
+    Arguments
+    ----------
+    name : str 
+        name of the quality gate 
+    quality_check : Enum 
+        enumerate that identify the QualityCheck
+    features : DataFrame 
+        set of features required for the QGs
+    algorithm : str 
+        name of the algorithm
+    """
     def __init__(self, name, quality_check, features, algorithm):
+        """
+        Initialize the QG
+
+        Arguments
+        ----------
+        name : str 
+            name of the quality gate 
+        quality_check : Enum 
+            enumerate that identify the QualityCheck
+        features : DataFrame 
+            set of features required for the QGs
+        algorithm : str 
+            name of the algorithm
+        """
         if not isinstance(self, QualityGate): raise Exception('Bad interface')
         if not self.version() == '1.0': raise Exception('Bad revision')
 
@@ -296,7 +517,9 @@ class QualityGateAlgorithm(QualityGate):
         self.algorithm = algorithm
 
     def execute(self):
-        
+        """
+        Function to execute the QG
+        """        
         list_warnings_no_appropiate = []
 
         # TODO: They should come from the Ontology
@@ -324,9 +547,15 @@ class QualityGateAlgorithm(QualityGate):
         return list_warnings_no_appropiate
 
     def get_algorithms_continous(self):
+        """
+        Function to retrieve the appropiated algorithms for Continuous Data Type
+        """
         return TypeData("Continuous").get_appropiate_algorithms_str()
         # return ["RandomForest", "LinearRegression", "NeuralNetworkRegression", "RigdeRegression", "KNN", "SVM"]
 
     def get_algorithms_discrete(self):
+        """
+        Function to retrieve the appropiated algorithms for Continuous Data Type
+        """
         return TypeData("Discrete").get_appropiate_algorithms_str()
         # return ["RandomForest", "LogisticRegression", "NaiveBayes", "DecisionTree", "SVM", "StochasticGradientDescent", "KNearest"]

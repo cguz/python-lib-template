@@ -42,7 +42,7 @@ class PrepareData:
         contains the column name of the ftl
     """
 
-    def __init__(self, feature_to_predict) -> None: 
+    def __init__(self, feature_to_predict): 
         """
         Create the class PrepareData
 
@@ -54,10 +54,9 @@ class PrepareData:
         logging.basicConfig(handlers=[logging.FileHandler(filename='logs/mlspace.log', encoding='utf-8', mode='a+')], level=logging.INFO)
 
         self.feature_to_predict = feature_to_predict
-        self.pass_quality_check = False
+        self.pass_quality_gate_one = False
         self.skip_test_download = False
         self.skip_test_loading_data = False
-        self
 
     def download(self):
         """
@@ -81,7 +80,7 @@ class PrepareData:
 
     def __download_unzip(self, url, file_name, folder, only_unzip):
         """
-        Download and unzip the dataset
+        Private function to download and unzip the dataset
 
         Parameters
         ----------
@@ -354,7 +353,6 @@ class PrepareData:
         """
         Private Function to load the ftl files. 
         """
-
         # Load the ftl files: train samples
         ftl_fnames = [
             '/train_set/context--2008-08-22_2010-07-10--ftl.csv',
@@ -368,7 +366,9 @@ class PrepareData:
         self.ftl_cols = list(self.ftl_all.columns)
 
     def analyze_data(self):    
-        
+        """
+        function to analyze and process ftl files
+        """
         # ***********
         #  FTL files
         # ***********
@@ -382,10 +382,13 @@ class PrepareData:
         # prune out from `ftl_df` the rarely occurring event types
         self.ftl_df_sel = self.ftl_df[min_occ_cols]
 
+    def check_quality_gate(self): 
+        """
+        Function to apply all the quality checks of the quality gate 1
+        """
 
-    def check_quality_gate(self):
-        
-        if not self.pass_quality_check:
+        # if we already no pass the quality check
+        if not self.pass_quality_gate_one:
 
             # apply QG1-QC1
             (power_risks_range, power_unknown) = self.__check_range(self.power_all)
@@ -406,44 +409,52 @@ class PrepareData:
 
 
             # apply QG1-QC3
-            # Name of the expectation suite
-            expectation_suite_name = "mars_express_power_train_x.demo"
-
-            # Name of the checkpoint
-            checkpoint = "mars_express_power_train_x.demo" 
-
-            # Name of the dataset to evaluate
-            dataset_name = "train_x.csv"
-
-            self.__check_great_expectation(dataset_name, checkpoint, expectation_suite_name)
+            # Name of the dataset to evaluate,  Name of the checkpoint, Name of the expectation suite
+            self.__check_great_expectation(dataset_name = "train_x.csv", checkpoint = "mars_express_power_train_x.demo", expectation_suite_name = "mars_express_power_train_x.demo")
 
 
             # apply QG1-QC4
-            name_exp_dist = "power_expected_distribution"
-            
-            result = self.__check_expected_distribution(self.power_cols, self.power_all, name_exp_dist)
+            result = self.__check_expected_distribution(self.power_cols, self.power_all, name_exp_dist = "power_expected_distribution")
 
             logging.info("${0}".format(result[self.feature_to_predict]))
 
-            self.pass_quality_check = True
+            self.pass_quality_gate_one = True
 
-
-    # define the function to call the quality gate check range
     def __check_range(self, dataset_column):
+        """
+        Private function to apply the quality check 1 of QG1
+
+        Parameters
+        ----------
+        dataset_column : DataFrame
+            set of values to check its ranges with the Ontology
+        """
         qg = QualityGate1("QG1-QC1", QualityCheck.QC1, dataset_column)
         return qg.execute()
 
-    # function to print risks
-    def __print_risks_range(self, text, risks, unknown):
-        logging.info("${0}:".format(text))
+    def __print_risks_range(self, label, risks, unknown):
+        """
+        Private function to print risks
+
+        Parameters
+        ----------
+        label : str
+            label of the columns
+        risks : DataFrame
+            range of values that are in risks
+        unknown : str
+            set of feature that are not in the ontology
+        """
+        logging.info("${0}:".format(label))
         if len(risks) != 0:
             logging.info(" -> risks range: \n ${0}".format(risks))
         if len(unknown) != 0:
             logging.info(" -> the following feature are not inside the ontology:\n ${0}".format(unknown))
 
-
-    # define the function to fill gaps
     def __check_fill_gaps(self):
+        """
+        Private function to fill gaps
+        """
         
         # saaf and LTDATA
         qg = QualityGate1("QG1-QC2", QualityCheck.QC2, "nearest")
@@ -459,22 +470,25 @@ class PrepareData:
             self.dmop_all = self.dmop_all.reindex(self.df.index).fillna(0)
             # dmop_all = dmop_all.reindex(df.index, fill_value=0)
 
-
-    # define the function to call the great expectation
-    def __check_great_expectation(self, dataset_name, checkpoint, expectation_suite_name):
+    def __check_great_expectation(self, dataset_name, checkpoint, expectation_suite_name):        
+        """
+        Private function to call the great expectation
+        """
         qg = QualityGate1("QG1-QC3", QualityCheck.QC3, dataset_name, checkpoint, expectation_suite_name)
         return qg.execute()
 
-
-    # define the function to call the expected distribution
-    def __check_expected_distribution(self, power_cols, power_all, name_exp_dist):
+    def __check_expected_distribution(self, power_cols, power_all, name_exp_dist):        
+        """
+        Private function to call the expected distribution
+        """
         qg = QualityGate1("QG1-QC4", QualityCheck.QC4, power_cols, power_all, name_exp_dist)
         return qg.execute()
 
-
-    # define function to save files
-    def save(self):
-
+    def save(self):    
+        """
+        Function to save the files as pickle and csv formats
+        """
+        
         # we join all the explanatory features
         self.df = self.df.join(self.saaf_all)
         self.df = self.df.join(self.ltdata_all)
@@ -482,12 +496,16 @@ class PrepareData:
         self.df = self.df.join(self.ftl_df_sel)
         # self.df.shape
 
-        self.__save_to_file()
+        # save the files as pickle
+        self.__save_to_file_as_pickle()
 
-        self.__store_csv_file()
+        # save the files as csv
+        self.__save_to_file_as_csv()
         
-    # define function to save files
-    def __save_to_file(self):
+    def __save_to_file_as_pickle(self):
+        """
+        Private function to save the files as pickle
+        """
 
         # TODO select features to predict 
         self.Y = self.df[self.power_cols] 
@@ -508,7 +526,10 @@ class PrepareData:
         self.Y.to_pickle(FULL_TRAIN_Y_TO_PKL)
         self.X.to_pickle(FULL_TRAIN_X_TO_PKL)
 
-    def __store_csv_file(self):
+    def __save_to_file_as_csv(self):
+        """
+        Private function to save the files as csv
+        """
 
         # if the directory does not exist, we create it
         if not os.path.exists(configuration.PATH_TO_DATA_GE):

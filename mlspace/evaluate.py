@@ -7,10 +7,9 @@ import logging
 from mlspace.helpers import functions
 from mlspace.helpers import configuration
 
-
-# define class to evaluate the model
 class EvaluateModel():
-    """ Evaluate Model
+    """ 
+    define class to evaluate the model 
     
     Attributes
     ----------
@@ -20,7 +19,7 @@ class EvaluateModel():
         metric root mean square error to store in mlflow
     """
 
-    def __init__(self, path_data) -> None:
+    def __init__(self, path_data):
         """
         Create the class EvaluateModel
 
@@ -33,23 +32,32 @@ class EvaluateModel():
 
         self.path_data = path_data
         self.check_finish = False
-        self
 
     def evaluate(self):
-
+        """
+        Function to evaluate the model
+        """
         # create the full path to store the data
         FULL_TEST_Y = os.path.join(self.path_data, configuration.NAME_TEST_Y+'.npy')
         FULL_TEST_Y_HAT = os.path.join(self.path_data, configuration.NAME_TEST_Y_HAT+'.npy')
 
         # load the estimated and real values
         Y_test = np.load(FULL_TEST_Y)
-        Y_test_hat = np.load(FULL_TEST_Y_HAT)
+        self.Y_test_hat = np.load(FULL_TEST_Y_HAT)
 
         # load the metric rmse
-        self.metric_rmse = functions.RMSE(Y_test, Y_test_hat)
+        self.metric_rmse = functions.RMSE(Y_test, self.Y_test_hat)
         logging.info("Local prediction error: ${0}\n".format(self.metric_rmse))
 
-        df = pd.DataFrame(Y_test_hat[0])
+        self.__store_to_file_csv()
+
+        self.check_finish = True
+
+    def __store_to_file_csv(self):
+        """
+        Private function to stor the estimated Y value to csv file
+        """
+        df = pd.DataFrame(self.Y_test_hat[0])
         df.rename(columns={0: 'NPWD2372'}, inplace=True)
 
         # create the folder if it does not exist
@@ -57,8 +65,4 @@ class EvaluateModel():
             os.mkdir(configuration.PATH_TO_DATA_GE)
         
         # store it in the great expectation folder
-        df.to_csv(configuration.PATH_TO_DATA_GE_DATASET, index=False) # save to new csv file
-
-        self.check_finish = True
-
-        
+        df.to_csv(configuration.PATH_TO_DATA_GE_DATASET, index=False)
