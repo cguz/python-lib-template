@@ -1,5 +1,6 @@
 # import libraries
 import os
+from tokenize import String
 
 
 # Download
@@ -52,6 +53,20 @@ PATH_TO_DATA_GE_DATASET = os.path.join(PATH_TO_DATA_GE, "estimated_y.csv")
 FULL_TRAIN_Y_TO_CSV = os.path.join(PATH_TO_DATA_GE, NAME_TRAIN_Y_TO_CSV)
 FULL_TRAIN_X_TO_CSV = os.path.join(PATH_TO_DATA_GE, NAME_TRAIN_X_TO_CSV)
 
+# print with colors 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def color_print(str : String):    
+    print(bcolors.OKGREEN + str + bcolors.ENDC)
 
 def update_folders():
     """
